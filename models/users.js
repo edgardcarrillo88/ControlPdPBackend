@@ -2,10 +2,11 @@ const mongoose = require('mongoose')
 
 const usersquema = mongoose.Schema(
     {
-        correo: { type: String },
-        usuario: { type: String },
+        email: { type: String },
+        usuario: { type: String, unique:true },
         contrasena: { type: String },
         empresa: { type: String },
+        celular: { type: String },
         deleted: { type: Boolean, default: false },
         verificado: { type: Boolean, default: false }
     }, {

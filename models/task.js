@@ -16,6 +16,8 @@ const taskschema = mongoose.Schema({
     comentarios: String,
     inicioreal: String,
     finreal: String,
+    area: String,
+    hh: Number,
     curva:String,        
     deleted: {type: Boolean, default:false}
 },

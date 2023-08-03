@@ -7,5 +7,6 @@ datarouter.post('/delete',datacontroller.deleteall)
 datarouter.get('/filters',datacontroller.getfiltersdata)
 datarouter.get('/filtereddata',datacontroller.filtereddata)
 datarouter.put('/updatedata',datacontroller.updatedata)
+datarouter.put('/updatestatus',datacontroller.statusupdate)
 
 module.exports = datarouter

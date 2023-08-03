@@ -1,6 +1,6 @@
 const xlsx = require('xlsx');
 const taskmodel = require('../models/task')
-const { format, addMinutes, parseISO } = require('date-fns')
+const updatemodel = require('../models/updates')
 
 
 const uploadexcel = (req, res) => {
@@ -17,7 +17,6 @@ const uploadexcel = (req, res) => {
             console.log(rowData.inicioplan);
             const fechainicio = new Date((rowData.inicioplan - 25569) * 86400 * 1000);
             fechainicio.setMilliseconds(fechainicio.getMilliseconds() + 100);
-            //fechainicio.setMilliseconds(fechainicio.getMilliseconds() + 100);
             // const fechainicioFormateada = format(fechainicio, 'dd/MM/yyyy HH:mm');
             // rowData.inicioplan = fechainicioFormateada;
             console.log(fechainicio);
@@ -27,7 +26,6 @@ const uploadexcel = (req, res) => {
             console.log(rowData.finplan);
             const fechafin = new Date((rowData.finplan - 25569) * 86400 * 1000);
             fechafin.setMilliseconds(fechafin.getMilliseconds() + 100);
-            // fechafin.setMilliseconds(fechafin.getMilliseconds() + 100);
             // const fechafinFormateada = format(fechafin, 'dd/MM/yyyy HH:mm');
             //rowData.finplan = fechafinFormateada;
             console.log(fechafin);
@@ -79,12 +77,9 @@ const getfiltersdata = async (req, res) => {
         data.push(uniqueValueObject);
     }
 
-    console.log(data);
-
-
-    console.log(data);
     res.status(200).json({ data })
 }
+
 
 
 const filtereddata = async (req, res) => {
@@ -102,30 +97,50 @@ const filtereddata = async (req, res) => {
 
 
 const updatedata = async (req, res) => {
-    console.log(req.body);
-    const { id, comentario, inicio, fin, avance } = req.body
+    const { id, idtask, comentario, inicio, fin, avance, usuario } = req.body;
 
-    const [fechainicio, horainicio] = inicio.split('T');
-    const [anhoinicio, mesinicio, diainicio] = fechainicio.split('-');
-    const [horasinicio, minutosinicio] = horainicio.split(':');
-    const newinicio = `${diainicio}-${mesinicio}-${anhoinicio}T${horasinicio}:${minutosinicio}`;
+    console.log(usuario);
+    console.log(inicio);
+    let newinicio;
+    let newfin;
 
-    const [fechafin, horafin] = fin.split('T');
-    const [anhofin, mesfin, diafin] = fechafin.split('-');
-    const [horasfin, minutosfin] = horafin.split(':');
-    const newfinfin = `${diafin}-${mesfin}-${anhofin}T${horasfin}:${minutosfin}`;
+    if (inicio) {
+        const [fechainicio, horainicio] = inicio.split('T');
+        const [anhoinicio, mesinicio, diainicio] = fechainicio.split('-');
+        const [horasinicio, minutosinicio] = horainicio.split(':');
+        newinicio = `${diainicio}/${mesinicio}/${anhoinicio}, ${horasinicio}:${minutosinicio}`;
+    }
+
+    if (fin) {
+        const [fechafin, horafin] = fin.split('T');
+        const [anhofin, mesfin, diafin] = fechafin.split('-');
+        const [horasfin, minutosfin] = horafin.split(':');
+        newfin = `${diafin}/${mesfin}/${anhofin}, ${horasfin}:${minutosfin}`;
+    }
+
 
     console.log(newinicio);
-    console.log(newfinfin);
+    console.log(newfin);
     const data = await taskmodel.findByIdAndUpdate(id, {
-        $set: { comentarios: comentario },
-        $set: { inicioreal: newinicio },
-        $set: { finreal: newfinfin },
-        $set: { avance: avance },
-        $set: { curva: "Actual" },
+        $set: {
+            comentarios: comentario,
+            inicioreal: inicio,
+            finreal: fin,
+            avance: avance,
+            usuario: usuario,
+        }
     }, { new: true })
+
+
+    req.body.inicio = inicio;
+    req.body.fin = fin;
+    const dataupdated = new updatemodel(req.body)
+    await dataupdated.save();
+
     console.log("ejecutando request updatedata");
     res.status(200).json(data)
+
+
 }
 
 
@@ -140,4 +155,54 @@ const deleteall = async (req, res) => {
         });
 }
 
-module.exports = { uploadexcel, getalldata, filtereddata, updatedata, getfiltersdata, deleteall }
+
+const statusupdate = async (req, res) => {
+    console.log("actualizando status");
+    const { fechaActual } = req.body;
+    const data = await taskmodel.find({}).sort({ id: 1 })
+
+    data.map(async (task) => {
+        const fechainiciobd = new Date(task.inicioplan)
+        const fechafinbd = new Date(task.finplan)
+        const fechafrontend = new Date(fechaActual)
+
+        if (fechafrontend > fechainiciobd && task.avance === undefined) {
+            console.log("tarea atrasada");
+            const data = await taskmodel.findByIdAndUpdate(task._id, {
+                $set: {
+                    estado: "Atrasado"
+                }
+            })
+        }
+
+        if (fechafrontend > fechafinbd && task.avance !== 100) {
+            console.log("tarea atrasada");
+            const data = await taskmodel.findByIdAndUpdate(task._id, {
+                $set: {
+                    estado: "Atrasado"
+                }
+            })
+        }
+
+        if (task.avance === undefined) {
+            console.log("No iniciado");
+            const data = await taskmodel.findByIdAndUpdate(task._id, {
+                $set: {
+                    estado: "No iniciado"
+                }
+            })
+        }
+
+        if (task.avance === 100) {
+            console.log("Finalizado");
+            const data = await taskmodel.findByIdAndUpdate(task._id, {
+                $set: {
+                    estado: "Finalizado"
+                }
+            })
+        }
+    })
+}
+
+
+module.exports = { uploadexcel, getalldata, filtereddata, updatedata, getfiltersdata, deleteall, statusupdate }
