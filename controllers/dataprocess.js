@@ -212,5 +212,21 @@ const statusupdate = async (req, res) => {
     })
 }
 
+const deletehistory = async (req,res) =>{
+    console.log("borrando el historial de datos");
+    updatemodel.deleteMany({})
+        .then(() => {
+            console.log('Todos los documentos eliminados correctamente');
+        })
+        .catch((error) => {
+            console.error('Error al eliminar documentos:', error);
+        });
+}
 
-module.exports = { uploadexcel, getalldata, filtereddata, updatedata, getfiltersdata, deleteall, statusupdate }
+const getdatahistory = async (req,res) =>{
+    console.log("ejecutando get data history");
+    const data = await updatemodel.find({}).sort({ id: 1 })
+    res.status(200).json({ data })
+}
+
+module.exports = { uploadexcel, getalldata, filtereddata, updatedata, getfiltersdata, deleteall, statusupdate,deletehistory,getdatahistory }
