@@ -18,7 +18,8 @@ const taskschema = mongoose.Schema({
     finreal: String,
     area: String,
     hh: Number,
-    curva:String,        
+    curva:String,
+    lastupdate: String,       
     deleted: {type: Boolean, default:false}
 },
 {

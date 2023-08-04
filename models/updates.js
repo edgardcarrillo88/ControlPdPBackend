@@ -8,6 +8,7 @@ const updatetaskschema = mongoose.Schema({
     fin: String,
     avance: Number,
     usuario: String,
+    vigente: String,
     deleted: {type: Boolean, default:false}
 },
 {

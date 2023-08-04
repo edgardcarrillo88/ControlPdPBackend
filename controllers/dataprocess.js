@@ -33,7 +33,6 @@ const uploadexcel = (req, res) => {
             console.log(rowData.finplan);
 
             const data = new taskmodel(rowData);
-            console.log(data);
             await data.save();
 
         } catch (error) {
@@ -84,20 +83,14 @@ const getfiltersdata = async (req, res) => {
 
 const filtereddata = async (req, res) => {
     console.log("ejecutando request filtereddata");
-    console.log(req);
-    console.log(req.query);
-    console.log(req.body);
-    console.log(req.body.id);
     const { id } = req.query
-    console.log(id);
     const data = await taskmodel.find({ id })
-    console.log(data);
     res.status(200).json(data[0])
 }
 
 
 const updatedata = async (req, res) => {
-    const { id, idtask, comentario, inicio, fin, avance, usuario } = req.body;
+    const { id, idtask, comentario, inicio, fin, avance, usuario, lastupdate, vigente } = req.body;
 
     console.log(usuario);
     console.log(inicio);
@@ -128,12 +121,24 @@ const updatedata = async (req, res) => {
             finreal: fin,
             avance: avance,
             usuario: usuario,
+            lastupdate: lastupdate,
         }
     }, { new: true })
 
 
+    const updated = await updatemodel.find({ idtask })
+    console.log(updated);
+    updated.map( async (item) => {
+        const data = await updatemodel.findByIdAndUpdate(item._id, {
+            $set: {
+                vigente: "No"
+            }
+        })
+    })
+
     req.body.inicio = inicio;
     req.body.fin = fin;
+    req.body.idtask = idtask;
     const dataupdated = new updatemodel(req.body)
     await dataupdated.save();
 
@@ -168,7 +173,7 @@ const statusupdate = async (req, res) => {
 
 
         if (task.avance === undefined) {
-            console.log("No iniciado");
+            // console.log("No iniciado");
             const data = await taskmodel.findByIdAndUpdate(task._id, {
                 $set: {
                     estado: "No iniciado"
@@ -177,7 +182,7 @@ const statusupdate = async (req, res) => {
         }
 
         if (fechafrontend > fechainiciobd && task.avance === undefined) {
-            console.log("tarea atrasada");
+            // console.log("tarea atrasada");
             const data = await taskmodel.findByIdAndUpdate(task._id, {
                 $set: {
                     estado: "Atrasado"
@@ -186,7 +191,7 @@ const statusupdate = async (req, res) => {
         }
 
         if (fechafrontend > fechafinbd && task.avance !== 100) {
-            console.log("tarea atrasada");
+            // console.log("tarea atrasada");
             const data = await taskmodel.findByIdAndUpdate(task._id, {
                 $set: {
                     estado: "Atrasado"
@@ -197,7 +202,7 @@ const statusupdate = async (req, res) => {
         
 
         if (task.avance === 100) {
-            console.log("Finalizado");
+            // console.log("Finalizado");
             const data = await taskmodel.findByIdAndUpdate(task._id, {
                 $set: {
                     estado: "Finalizado"
