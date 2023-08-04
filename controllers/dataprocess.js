@@ -166,6 +166,16 @@ const statusupdate = async (req, res) => {
         const fechafinbd = new Date(task.finplan)
         const fechafrontend = new Date(fechaActual)
 
+
+        if (task.avance === undefined) {
+            console.log("No iniciado");
+            const data = await taskmodel.findByIdAndUpdate(task._id, {
+                $set: {
+                    estado: "No iniciado"
+                }
+            })
+        }
+
         if (fechafrontend > fechainiciobd && task.avance === undefined) {
             console.log("tarea atrasada");
             const data = await taskmodel.findByIdAndUpdate(task._id, {
@@ -184,14 +194,7 @@ const statusupdate = async (req, res) => {
             })
         }
 
-        if (task.avance === undefined) {
-            console.log("No iniciado");
-            const data = await taskmodel.findByIdAndUpdate(task._id, {
-                $set: {
-                    estado: "No iniciado"
-                }
-            })
-        }
+        
 
         if (task.avance === 100) {
             console.log("Finalizado");

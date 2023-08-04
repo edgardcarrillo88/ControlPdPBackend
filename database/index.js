@@ -10,7 +10,7 @@ const dbconnect = (app) => {
                 console.log(`Servidor ${PORT}`)
             })
 
-            console.log("Conexión exitosa a la base de datos")
+            console.log("Conexión exitosa a la base de datos, despliegue")
         }
         )
         .catch((err) => console.log(err))
