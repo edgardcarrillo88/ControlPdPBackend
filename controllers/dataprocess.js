@@ -1,6 +1,7 @@
 const xlsx = require('xlsx');
 const taskmodel = require('../models/task')
 const updatemodel = require('../models/updates')
+const valorizacionmodel = require('../models/valorizacion')
 
 
 const uploadexcel = (req, res) => {
@@ -229,4 +230,34 @@ const getdatahistory = async (req,res) =>{
     res.status(200).json({ data })
 }
 
-module.exports = { uploadexcel, getalldata, filtereddata, updatedata, getfiltersdata, deleteall, statusupdate,deletehistory,getdatahistory }
+const valorizaciones = async (req,res) => {
+    console.log("procesando valorizaciones");
+
+    
+    const filepath = req.file.path
+    const workbook = xlsx.readFile(filepath)
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const excelData = xlsx.utils.sheet_to_json(worksheet);
+
+    const dataPromises = excelData.map(async (rowData) => {
+        try {
+            const data = new valorizacionmodel(rowData);
+            await data.save();
+
+        } catch (error) {
+            console.error('Error al guardar el dato:', error);
+        }
+    });
+    Promise.all(dataPromises)
+        .then(() => {
+            console.log('Todos los datos guardados en la base de datos');
+            res.status(200).json({ message: 'Datos guardados en la base de datos' });
+        })
+        .catch((error) => {
+            console.error('Error al guardar los datos:', error);
+            res.status(500).json({ error: 'Error al guardar los datos' });
+        })
+
+}
+
+module.exports = { uploadexcel, getalldata, filtereddata, updatedata, getfiltersdata, deleteall, statusupdate,deletehistory,getdatahistory,valorizaciones }

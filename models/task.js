@@ -20,6 +20,7 @@ const taskschema = mongoose.Schema({
     hh: Number,
     curva:String,
     lastupdate: String,       
+    rutacritica: String,       
     deleted: {type: Boolean, default:false}
 },
 {
