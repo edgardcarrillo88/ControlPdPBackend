@@ -129,7 +129,7 @@ const updatedata = async (req, res) => {
 
     const updated = await updatemodel.find({ idtask })
     console.log(updated);
-    updated.map( async (item) => {
+    updated.map(async (item) => {
         const data = await updatemodel.findByIdAndUpdate(item._id, {
             $set: {
                 vigente: "No"
@@ -200,7 +200,7 @@ const statusupdate = async (req, res) => {
             })
         }
 
-        
+
 
         if (task.avance === 100) {
             // console.log("Finalizado");
@@ -213,7 +213,7 @@ const statusupdate = async (req, res) => {
     })
 }
 
-const deletehistory = async (req,res) =>{
+const deletehistory = async (req, res) => {
     console.log("borrando el historial de datos");
     updatemodel.deleteMany({})
         .then(() => {
@@ -224,16 +224,16 @@ const deletehistory = async (req,res) =>{
         });
 }
 
-const getdatahistory = async (req,res) =>{
+const getdatahistory = async (req, res) => {
     console.log("ejecutando get data history");
     const data = await updatemodel.find({}).sort({ id: 1 })
     res.status(200).json({ data })
 }
 
-const valorizaciones = async (req,res) => {
+const valorizaciones = async (req, res) => {
     console.log("procesando valorizaciones");
 
-    
+
     const filepath = req.file.path
     const workbook = xlsx.readFile(filepath)
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -260,4 +260,10 @@ const valorizaciones = async (req,res) => {
 
 }
 
-module.exports = { uploadexcel, getalldata, filtereddata, updatedata, getfiltersdata, deleteall, statusupdate,deletehistory,getdatahistory,valorizaciones }
+const dataedp = async (req, res) => {
+    console.log("get data valorizaciones");
+    const data = await valorizacionmodel.find({}).sort({ id: 1 })
+    res.status(200).json({ data })
+}
+
+module.exports = { uploadexcel, getalldata, filtereddata, updatedata, getfiltersdata, deleteall, statusupdate, deletehistory, getdatahistory, valorizaciones, dataedp }
