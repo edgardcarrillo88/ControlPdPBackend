@@ -2,6 +2,7 @@ const xlsx = require('xlsx');
 const taskmodel = require('../models/task')
 const updatemodel = require('../models/updates')
 const valorizacionmodel = require('../models/valorizacion')
+const mongoose = require('mongoose')
 
 
 const uploadexcel = (req, res) => {
@@ -79,7 +80,6 @@ const getfiltersdata = async (req, res) => {
 
     res.status(200).json({ data })
 }
-
 
 
 const filtereddata = async (req, res) => {
@@ -213,6 +213,7 @@ const statusupdate = async (req, res) => {
     })
 }
 
+
 const deletehistory = async (req, res) => {
     console.log("borrando el historial de datos");
     updatemodel.deleteMany({})
@@ -224,11 +225,13 @@ const deletehistory = async (req, res) => {
         });
 }
 
+
 const getdatahistory = async (req, res) => {
     console.log("ejecutando get data history");
     const data = await updatemodel.find({}).sort({ id: 1 })
     res.status(200).json({ data })
 }
+
 
 const valorizaciones = async (req, res) => {
     console.log("procesando valorizaciones");
@@ -236,18 +239,30 @@ const valorizaciones = async (req, res) => {
 
     const filepath = req.file.path
     const workbook = xlsx.readFile(filepath)
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const excelData = xlsx.utils.sheet_to_json(worksheet);
+    const arrayobject = Object.values(valorizacionmodel)
 
-    const dataPromises = excelData.map(async (rowData) => {
-        try {
-            const data = new valorizacionmodel(rowData);
-            await data.save();
+    const dataPromises = [];
 
-        } catch (error) {
-            console.error('Error al guardar el dato:', error);
+    for (const item of arrayobject) {
+        if (!!item.model && item !== null) {
+            const modelName = item.modelName;
+            const Model = mongoose.model(modelName);
+            const worksheet = workbook.Sheets[modelName];
+            const excelData = xlsx.utils.sheet_to_json(worksheet);
+
+            const modelPromises = excelData.map(async (rowData) => {
+                try {
+                    const data = new Model(rowData);
+                    await data.save();
+
+                } catch (error) {
+                    console.error('Error al guardar el dato:', error);
+                }
+            });
+            dataPromises.push(Promise.all(modelPromises));
         }
-    });
+    }
+
     Promise.all(dataPromises)
         .then(() => {
             console.log('Todos los datos guardados en la base de datos');
@@ -257,13 +272,64 @@ const valorizaciones = async (req, res) => {
             console.error('Error al guardar los datos:', error);
             res.status(500).json({ error: 'Error al guardar los datos' });
         })
-
 }
+
 
 const dataedp = async (req, res) => {
-    console.log("get data valorizaciones");
-    const data = await valorizacionmodel.find({}).sort({ id: 1 })
-    res.status(200).json({ data })
-}
+    console.log("Obteniendo datos de valorizaciones");
+    const arrayobject = Object.values(valorizacionmodel);
+    const dataPromises = [];
 
-module.exports = { uploadexcel, getalldata, filtereddata, updatedata, getfiltersdata, deleteall, statusupdate, deletehistory, getdatahistory, valorizaciones, dataedp }
+    for (const item of arrayobject) {
+        const modelName = item.modelName;
+        const Model = mongoose.model(modelName);
+        // Agrega una promesa para buscar todos los documentos en el modelo y almacenarla en dataPromises
+        dataPromises.push(Model.find({}).sort({ id: 1 }));
+    }
+
+    try {
+        // Espera a que se completen todas las promesas de búsqueda en los modelos
+        const data = await Promise.all(dataPromises);
+
+        res.status(200).json({ data });
+    } catch (error) {
+        console.error('Error al obtener los datos:', error);
+        res.status(500).json({ error: 'Error al obtener los datos' });
+    }
+};
+
+
+
+const deleteallEdp = async (req, res) => {
+    console.log("Borrando todos los datos");
+
+    try {
+        const modelos = Object.values(valorizacionmodel);
+
+        for (const modelo of modelos) {
+            await modelo.deleteMany({});
+        }
+
+        console.log('Todos los documentos eliminados correctamente');
+        res.status(200).send('Todos los documentos eliminados correctamente');
+    } catch (error) {
+        console.error('Error al eliminar documentos:', error);
+        res.status(500).send('Error al eliminar documentos');
+    }
+};
+
+
+module.exports = {
+    uploadexcel,
+    getalldata,
+    filtereddata,
+    updatedata,
+    getfiltersdata,
+    deleteall,
+    statusupdate,
+    deletehistory,
+    getdatahistory,
+    valorizaciones,
+    dataedp,
+    deleteallEdp
+}
